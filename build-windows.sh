@@ -1,0 +1,21 @@
+export CGO_ENABLED=0
+export GOARCH=amd64
+export GOOS=windows
+
+go mod vendor
+
+TAG="Beta"
+BRANCH=$(git symbolic-ref --short -q HEAD)
+COMMIT=$(git rev-parse --verify HEAD)
+NOW=$(date '+%FT%T%z')
+
+VERSION="v0.1.1-${TAG}"
+APPNAME="logAgent-${VERSION}.exe"
+DESCRIPTION="日志采集服务"
+
+go build -o bin/${APPNAME} -ldflags "-X demo/build.AppName=Demo \
+-X github.com/issueye/log-agent/initialize.Branch=${BRANCH} \
+-X github.com/issueye/log-agent/initialize.Commit=${COMMIT} \
+-X github.com/issueye/log-agent/initialize.Date=${NOW} \
+-X github.com/issueye/log-agent/initialize.AppName=${DESCRIPTION} \
+-X github.com/issueye/log-agent/initialize.Version=${VERSION}" main.go
