@@ -147,10 +147,9 @@ func getDB() *gorm.DB {
 func initConfig() {
 	// 检查文件是否存在
 	path := filepath.Join("runtime", "data", "data.db")
-	ok := utils.FileExist(path)
 
 	logPath := filepath.Join("runtime", "logs", "database.log")
-	log, _, err := logger.NewZap(logPath, logger.LOM_RELEASE)
+	log, _, err := logger.NewZap(logPath, logger.LOM_DEBUG)
 	if err != nil {
 		panic(fmt.Errorf("创建日志对象失败，失败原因：%s", err))
 	}
@@ -160,13 +159,13 @@ func initConfig() {
 	}
 
 	global.DB = d
-	if !ok {
-		// 创建表
-		d.AutoMigrate(
-			&Param{},
-			&model.Task{},
-			&model.User{},
-			&model.Monitor{},
-		)
-	}
+
+	// 初始化数据库表
+	// 创建表
+	d.AutoMigrate(
+		&Param{},
+		&model.Task{},
+		&model.User{},
+		&model.Monitor{},
+	)
 }

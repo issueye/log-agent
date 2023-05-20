@@ -7,7 +7,6 @@ import (
 	"github.com/issueye/log-agent/internal/global"
 	"github.com/issueye/log-agent/internal/model"
 	"github.com/issueye/log-agent/pkg/utils"
-	"github.com/jinzhu/copier"
 
 	"gorm.io/gorm"
 )
@@ -59,11 +58,6 @@ func (srv *Task) isNotHave(id string) bool {
 // 添加定时任务数据
 func (srv *Task) Create(req *model.CreateTask) error {
 	table := new(model.Task)
-	err := copier.Copy(table, req)
-	if err != nil {
-		return err
-	}
-
 	table.ID = strconv.FormatInt(utils.GenID(), 10)
 	table.State = false
 	table.Name = req.Name

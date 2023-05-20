@@ -15,16 +15,22 @@ func (Monitor) TableName() string {
 }
 
 type CreateMonitor struct {
-	Name       string `json:"name"`       // 名称
-	LogPath    string `json:"logPath"`    // 日志路径
-	Level      int    `json:"level"`      // 日志等级 如果没有设置则默认全部类型
-	ScriptPath string `json:"scriptPath"` // 脚本路径 可为空
+	Name       string `json:"name" binding:"required" label:"名称"`         // 名称
+	LogPath    string `json:"logPath" binding:"required" label:"日志路径"`    // 日志路径
+	Level      int    `json:"level" binding:"required" label:"日志等级"`      // 日志等级 如果没有设置则默认全部类型
+	ScriptPath string `json:"scriptPath" binding:"required" label:"脚本路径"` // 脚本路径 可为空
 }
 
 type ModifyMonitor struct {
-	ID         string `json:"id"`         // 编码
-	Name       string `json:"name"`       // 名称
-	LogPath    string `json:"logPath"`    // 日志路径
-	Level      int    `json:"level"`      // 日志等级 如果没有设置则默认全部类型
-	ScriptPath string `json:"scriptPath"` // 脚本路径 可为空
+	ID         string `json:"id" binding:"required" label:"编码"` // 编码
+	Name       string `json:"name"`                             // 名称
+	LogPath    string `json:"logPath"`                          // 日志路径
+	Level      int    `json:"level"`                            // 日志等级 如果没有设置则默认全部类型
+	ScriptPath string `json:"scriptPath"`                       // 脚本路径 可为空
+}
+
+// 查询条件
+type QueryMonitor struct {
+	Condition string `json:"condition" form:"condition"` // 条件
+	Page
 }

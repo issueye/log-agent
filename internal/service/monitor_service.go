@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/issueye/log-agent/internal/model"
@@ -18,6 +19,28 @@ func NewMonitor(db *gorm.DB) *Monitor {
 	monitor.Db = db
 	monitor.BaseService = NewBaseService(db)
 	return monitor
+}
+
+func (srv *Monitor) Query(req *model.QueryMonitor) ([]*model.Monitor, error) {
+	list := make([]*model.Monitor, 0)
+	err := srv.DataFilter(model.Monitor{}.TableName(), req, &list, func(db *gorm.DB) (*gorm.DB, error) {
+		query := db.Order("id")
+
+		if req.Condition != "" {
+			query = query.Where("name like ?", fmt.Sprintf("%%%s%%", req.Condition))
+			query = query.Or("log_path like ?", fmt.Sprintf("%%%s%%", req.Condition))
+			query = query.Or("script_path like ?", fmt.Sprintf("%%%s%%", req.Condition))
+		}
+
+		return query, nil
+	})
+	return list, err
+}
+
+func (srv *Monitor) GetById(id string) (*model.Monitor, error) {
+	data := new(model.Monitor)
+	err := srv.Db.Model(data).Where("id = ?", id).Find(data).Error
+	return data, err
 }
 
 // 创建数据
@@ -57,4 +80,8 @@ func (srv *Monitor) ModifyState(id string) (bool, error) {
 	}
 
 	return nowState, nil
+}
+
+func (srv *Monitor) DelMonitor(id string) error {
+	return srv.Db.Where("id = ?", id).Delete(&model.Monitor{}).Error
 }

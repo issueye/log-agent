@@ -3,6 +3,7 @@ package router
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/issueye/log-agent/internal/config"
+	"github.com/issueye/log-agent/internal/controller"
 	"github.com/issueye/log-agent/internal/global"
 	"github.com/issueye/log-agent/internal/middleware"
 )
@@ -30,6 +31,16 @@ func InitRouter(r *gin.Engine) {
 		NewParamsRouter(), // 参数配置
 		NewJobRouter(),    // 定时任务
 	)
+
+	// monitor
+	monitor := version.Group("monitor", global.Auth.MiddlewareFunc())
+	{
+		monitor.GET("", controller.ListMonitor)
+		monitor.POST("", controller.AddMonitor)
+		monitor.PUT("", controller.ModifyMonitor)
+		monitor.PUT("state/:id", controller.ModifyStateMonitor)
+		monitor.DELETE("/:id", controller.DelMonitor)
+	}
 }
 
 // registerRouter 注册路由

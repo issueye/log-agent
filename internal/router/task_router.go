@@ -7,13 +7,13 @@ import (
 
 type JobRouter struct {
 	Name    string
-	control *controller.TBZDDSRRController
+	control *controller.TaskController
 }
 
 func NewJobRouter() *JobRouter {
 	return &JobRouter{
 		Name:    "cron",
-		control: controller.NewTBZDDSRRController(),
+		control: controller.NewTaskController(),
 	}
 }
 

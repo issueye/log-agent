@@ -8,15 +8,14 @@ import (
 	"github.com/issueye/log-agent/internal/global"
 	"github.com/issueye/log-agent/internal/model"
 	"github.com/issueye/log-agent/internal/service"
-	"github.com/jinzhu/copier"
 )
 
-type TBZDDSRRController struct {
+type TaskController struct {
 	Controller
 }
 
-func NewTBZDDSRRController() *TBZDDSRRController {
-	return new(TBZDDSRRController)
+func NewTaskController() *TaskController {
+	return new(TaskController)
 }
 
 // List doc
@@ -34,7 +33,7 @@ func NewTBZDDSRRController() *TBZDDSRRController {
 // @Failure     500         {object} res.Base                         true  "错误返回内容"
 // @Router      /granada/api/v1/job/list [get]
 // @Security    ApiKeyAuth
-func (TBZDDSRRController) List(ctx *gin.Context) {
+func (TaskController) List(ctx *gin.Context) {
 	control := New(ctx)
 
 	req := new(model.QueryTask)
@@ -66,7 +65,7 @@ func (TBZDDSRRController) List(ctx *gin.Context) {
 // @Failure     500  {object} res.Base             true "错误返回内容"
 // @Router      /granada/api/v1/job/create [post]
 // @Security    ApiKeyAuth
-func (TBZDDSRRController) Create(ctx *gin.Context) {
+func (TaskController) Create(ctx *gin.Context) {
 	control := New(ctx)
 
 	req := new(model.CreateTask)
@@ -79,7 +78,6 @@ func (TBZDDSRRController) Create(ctx *gin.Context) {
 
 	err = service.NewTask(global.DB).Create(req)
 	if err != nil {
-		global.Log.Errorf("添加定时任务失败，失败原因：%s", err.Error())
 		control.FailByMsgf("添加定时任务失败，失败原因：%s", err.Error())
 		return
 	}
@@ -98,7 +96,7 @@ func (TBZDDSRRController) Create(ctx *gin.Context) {
 // @Failure     500  {object} res.Base             true "错误返回内容"
 // @Router      /granada/api/v1/job/modify/{id} [put]
 // @Security    ApiKeyAuth
-func (TBZDDSRRController) Modify(ctx *gin.Context) {
+func (TaskController) Modify(ctx *gin.Context) {
 	control := New(ctx)
 
 	req := new(model.ModifyTask)
@@ -111,7 +109,6 @@ func (TBZDDSRRController) Modify(ctx *gin.Context) {
 
 	id := control.Param("id")
 	if id == "" {
-		global.Log.Error("修改定时任务ID不能为空")
 		control.FailByMsg("修改定时任务ID不能为空")
 		return
 	}
@@ -119,7 +116,6 @@ func (TBZDDSRRController) Modify(ctx *gin.Context) {
 	// 查询定时任务
 	info, err := service.NewTask(global.DB).GetById(id)
 	if err != nil {
-		global.Log.Errorf("查询定时任务失败，失败原因：%s", err.Error())
 		control.FailByMsg("查询定时任务失败")
 		return
 	}
@@ -128,7 +124,6 @@ func (TBZDDSRRController) Modify(ctx *gin.Context) {
 	if info.Mark == global.SYS_AUTO_CREATE {
 		// 判断描述是否被修改
 		if !strings.EqualFold(info.Mark, req.Mark) {
-			global.Log.Errorf("定时任务【%s-%s】由系统生成，不允许修改描述信息", info.Name, info.ID)
 			control.FailByMsgf("定时任务【%s-%s】由系统生成，不允许修改描述信息", info.Name, info.ID)
 			return
 		}
@@ -136,7 +131,6 @@ func (TBZDDSRRController) Modify(ctx *gin.Context) {
 
 	err = service.NewTask(global.DB).Modify(id, req)
 	if err != nil {
-		global.Log.Errorf("修改定时任务信息失败，失败原因：%s", err.Error())
 		control.FailByMsg("修改定时任务信息失败")
 		return
 	}
@@ -144,18 +138,17 @@ func (TBZDDSRRController) Modify(ctx *gin.Context) {
 	// 查询定时任务
 	info, err = service.NewTask(global.DB).GetById(id)
 	if err != nil {
-		global.Log.Errorf("查询定时任务失败，失败原因：%s", err.Error())
 		control.FailByMsg("查询定时任务失败")
 		return
 	}
 
 	notice := new(model.NoticeJob)
-	err = copier.Copy(notice, info)
-	if err != nil {
-		global.Log.Errorf("拷贝定时任务信息失败，失败原因：%s", err.Error())
-		control.FailByMsg("拷贝定时任务信息失败")
-		return
-	}
+	notice.ID = info.ID
+	notice.Name = info.Name
+	notice.Path = info.Path
+	notice.State = info.State
+	notice.Expression = info.Expression
+	notice.Mark = info.Mark
 
 	if info.State {
 		notice.Type = model.MODIFY_JOB
@@ -176,50 +169,46 @@ func (TBZDDSRRController) Modify(ctx *gin.Context) {
 // @Failure     500 {object} res.Base true "错误返回内容"
 // @Router      /granada/api/v1/job/modifyStatus/{id} [put]
 // @Security    ApiKeyAuth
-func (TBZDDSRRController) ModifyStatus(ctx *gin.Context) {
+func (TaskController) ModifyStatus(ctx *gin.Context) {
 	control := New(ctx)
 
 	id := control.Param("id")
 	if id == "" {
-		global.Log.Errorf("修改定时任务状态，参数ID不能为空")
 		control.FailByMsg("修改定时任务状态，参数ID不能为空")
 		return
 	}
 
 	// 获取当前定时任务的状态
-	job, err := service.NewTask(global.DB).GetById(id)
+	info, err := service.NewTask(global.DB).GetById(id)
 	if err != nil {
-		global.Log.Errorf("查询定时任务信息失败，失败原因：%s", err.Error())
 		control.FailByMsgf("查询定时任务信息失败，失败原因：%s", err.Error())
 		return
 	}
 
-	err = service.NewTask(global.DB).ModifyStatus(id, !job.State)
+	err = service.NewTask(global.DB).ModifyStatus(id, !info.State)
 	if err != nil {
-		global.Log.Errorf("修改定时任务信息失败，失败原因：%s", err.Error())
 		control.FailByMsgf("修改定时任务信息失败，失败原因：%s", err.Error())
 		return
 	}
 
 	// 获取当前定时任务的状态
-	job, err = service.NewTask(global.DB).GetById(id)
+	info, err = service.NewTask(global.DB).GetById(id)
 	if err != nil {
-		global.Log.Errorf("查询定时任务信息失败，失败原因：%s", err.Error())
 		control.FailByMsgf("查询定时任务信息失败，失败原因：%s", err.Error())
 		return
 	}
 
 	// 传递到管道
 	notice := new(model.NoticeJob)
-	err = copier.Copy(notice, job)
-	if err != nil {
-		global.Log.Errorf("拷贝定时任务信息失败，失败原因：%s", err.Error())
-		control.FailByMsgf("拷贝定时任务信息失败，失败原因：%s", err.Error())
-		return
-	}
+	notice.ID = info.ID
+	notice.Name = info.Name
+	notice.Path = info.Path
+	notice.State = info.State
+	notice.Expression = info.Expression
+	notice.Mark = info.Mark
 
 	// 开启定时任务则是添加定时任务，否则就是删除定时任务
-	if job.State {
+	if info.State {
 		notice.Type = model.ADD_JOB
 	} else {
 		notice.Type = model.DEL_JOB
@@ -241,7 +230,7 @@ func (TBZDDSRRController) ModifyStatus(ctx *gin.Context) {
 // @Failure     500 {object} res.Base             true "错误返回内容"
 // @Router      /granada/api/v1/job/batchDelete [delete]
 // @Security    ApiKeyAuth
-func (TBZDDSRRController) BatchDelete(ctx *gin.Context) {
+func (TaskController) BatchDelete(ctx *gin.Context) {
 	control := New(ctx)
 
 	req := new(model.DelTask)
@@ -254,7 +243,6 @@ func (TBZDDSRRController) BatchDelete(ctx *gin.Context) {
 
 	err = service.NewTask(global.DB).BatchDelete(req)
 	if err != nil {
-		global.Log.Errorf("删除定时任务失败，失败原因：%s", err.Error())
 		control.FailByMsgf("删除定时任务失败，失败原因：%s", err.Error())
 		return
 	}
@@ -273,12 +261,11 @@ func (TBZDDSRRController) BatchDelete(ctx *gin.Context) {
 // @Failure     500 {object} res.Base true "错误返回内容"
 // @Router      /granada/api/v1/job/delete/{id} [delete]
 // @Security    ApiKeyAuth
-func (TBZDDSRRController) Delete(ctx *gin.Context) {
+func (TaskController) Delete(ctx *gin.Context) {
 	control := New(ctx)
 
 	id := control.Param("id")
 	if id == "" {
-		global.Log.Error("删除定时任务，编码不能为空")
 		control.FailBind(errors.New("[id]不能为空"))
 		return
 	}
@@ -286,32 +273,29 @@ func (TBZDDSRRController) Delete(ctx *gin.Context) {
 	// 查询定时任务
 	info, err := service.NewTask(global.DB).GetById(id)
 	if err != nil {
-		global.Log.Errorf("查询定时任务失败，失败原因：%s", err.Error())
 		control.FailByMsgf("查询定时任务失败，失败原因：%s", err.Error())
 		return
 	}
 
 	if info.Mark == global.SYS_AUTO_CREATE {
-		global.Log.Errorf("定时任务【%s-%s】由系统生成，不允许删除", info.Name, info.ID)
 		control.FailByMsgf("定时任务【%s-%s】由系统生成，不允许删除", info.Name, info.ID)
 		return
 	}
 
 	err = service.NewTask(global.DB).Delete(id)
 	if err != nil {
-		global.Log.Errorf("删除定时任务失败，失败原因：%s", err.Error())
 		control.FailByMsgf("删除定时任务失败，失败原因：%s", err.Error())
 		return
 	}
 
 	// 传递到管道
 	notice := new(model.NoticeJob)
-	err = copier.Copy(notice, info)
-	if err != nil {
-		global.Log.Errorf("拷贝定时任务信息失败，失败原因：%s", err.Error())
-		control.FailByMsgf("拷贝定时任务信息失败，失败原因：%s", err.Error())
-		return
-	}
+	notice.ID = info.ID
+	notice.Name = info.Name
+	notice.Path = info.Path
+	notice.State = info.State
+	notice.Expression = info.Expression
+	notice.Mark = info.Mark
 
 	// 如果定时任务是在运行状态则需要删除定时任务
 	if info.State {
