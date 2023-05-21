@@ -44,20 +44,11 @@ func (srv BaseService) DataFilter(tableName string, req, list interface{}, f Lis
 	}
 	ref.FieldByName("Total").SetInt(count)
 
-	// 默认不分页
-	isNotPaging := true
-	// 判断 req 是否有 IsNotPaging 字段
-	// 如果有则判断是否为 true，如果为 true 则不分页 反之则分页
-	if !ref.FieldByName("IsNotPaging").IsValid() {
-		isNotPaging = true
-	}
-
 	// 判断是否需要进行分页
-	isNotPaging = ref.FieldByName("IsNotPaging").Bool()
 	pageNum := ref.FieldByName("PageNum").Int()
 	pageSize := ref.FieldByName("PageSize").Int()
 	// 如果 页码、每页大小小于0 则也不分页
-	if isNotPaging || (pageNum == 0 || pageSize == 0) {
+	if pageNum == 0 || pageSize == 0 {
 		err = db.Find(list).Error
 		if err != nil {
 			return err

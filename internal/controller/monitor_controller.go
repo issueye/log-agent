@@ -56,6 +56,18 @@ func ModifyMonitor(ctx *gin.Context) {
 		return
 	}
 
+	// 如果启用的状态不允许修改
+	data, err := service.NewMonitor(global.DB).GetById(req.ID)
+	if err != nil {
+		control.FailByMsgf("查询信息失败，失败原因：%s", err.Error())
+		return
+	}
+
+	if data.State {
+		control.FailByMsg("已启用，不允许修改")
+		return
+	}
+
 	err = service.NewMonitor(global.DB).Modify(req)
 	if err != nil {
 		control.FailByMsgf("修改监听信息失败，失败原因：%s", err.Error())
@@ -99,7 +111,7 @@ func ModifyStateMonitor(ctx *gin.Context) {
 
 		agent.ChanAgent <- a
 	} else {
-		value, ok := agent.MapAgent.Load(data.Name)
+		value, ok := agent.MapAgent.Load(data.ID)
 		if ok {
 			a := value.(*agent.Agent)
 			a.Close <- struct{}{}

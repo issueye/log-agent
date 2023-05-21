@@ -15,10 +15,10 @@ func (Monitor) TableName() string {
 }
 
 type CreateMonitor struct {
-	Name       string `json:"name" binding:"required" label:"名称"`         // 名称
-	LogPath    string `json:"logPath" binding:"required" label:"日志路径"`    // 日志路径
-	Level      int    `json:"level" binding:"required" label:"日志等级"`      // 日志等级 如果没有设置则默认全部类型
-	ScriptPath string `json:"scriptPath" binding:"required" label:"脚本路径"` // 脚本路径 可为空
+	Name       string `json:"name" binding:"required" label:"名称"`      // 名称
+	LogPath    string `json:"logPath" binding:"required" label:"日志路径"` // 日志路径
+	Level      int    `json:"level" binding:"required" label:"日志等级"`   // 日志等级 如果没有设置则默认全部类型
+	ScriptPath string `json:"scriptPath" label:"脚本路径"`                 // 脚本路径 可为空
 }
 
 type ModifyMonitor struct {

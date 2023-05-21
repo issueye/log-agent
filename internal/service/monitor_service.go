@@ -63,7 +63,7 @@ func (srv *Monitor) Modify(data *model.ModifyMonitor) error {
 	m["level"] = data.Level
 	m["script_path"] = data.ScriptPath
 
-	return srv.Db.Model(&model.Monitor{}).Updates(m).Error
+	return srv.Db.Model(&model.Monitor{}).Where("id = ?", data.ID).Updates(m).Error
 }
 
 func (srv *Monitor) ModifyState(id string) (bool, error) {
@@ -74,7 +74,7 @@ func (srv *Monitor) ModifyState(id string) (bool, error) {
 	}
 
 	nowState := !data.State
-	err = srv.Db.Model(data).Update("state = ?", nowState).Error
+	err = srv.Db.Model(data).Where("id = ?", id).Update("state", nowState).Error
 	if err != nil {
 		return false, err
 	}
