@@ -1,12 +1,46 @@
 package controller
 
 import (
+	"errors"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	"github.com/issueye/log-agent/internal/agent"
 	"github.com/issueye/log-agent/internal/global"
 	"github.com/issueye/log-agent/internal/model"
 	"github.com/issueye/log-agent/internal/service"
+	"github.com/issueye/log-agent/pkg/ws"
 )
+
+// websocket 升级并跨域
+var (
+	upgrade = &websocket.Upgrader{
+		// 允许跨域
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
+	}
+)
+
+// 日志查看 ws
+func WsLogView(ctx *gin.Context) {
+	control := New(ctx)
+	id := control.Param("id")
+	if id == "" {
+		control.FailBind(errors.New("[id]不能为空"))
+		return
+	}
+
+	// 升级为 websocket
+	conn, err := upgrade.Upgrade(control.Writer, control.Request, nil)
+	if err != nil {
+		control.FailByMsgf("升级协议失败，失败原因：%s", err.Error())
+	}
+
+	ws.NewConn(id, conn)
+	control.Success()
+}
 
 // 获取监听列表
 func ListMonitor(ctx *gin.Context) {
@@ -101,21 +135,14 @@ func ModifyStateMonitor(ctx *gin.Context) {
 	}
 
 	if state {
-		a := &agent.Agent{
-			ID:         data.ID,
-			Path:       data.LogPath,
-			ScriptPath: data.ScriptPath,
-			Level:      data.Level,
-			Close:      make(chan struct{}),
+		a, err := agent.New(data.ID, data.LogPath, data.ScriptPath, data.Level)
+		if err != nil {
+			control.FailByMsgf("创建监听失败，失败原因：%s", err.Error())
+			return
 		}
-
-		agent.ChanAgent <- a
+		a.Listen()
 	} else {
-		value, ok := agent.MapAgent.Load(data.ID)
-		if ok {
-			a := value.(*agent.Agent)
-			a.Close <- struct{}{}
-		}
+		agent.Del(data.ID)
 	}
 
 	control.Success()

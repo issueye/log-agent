@@ -91,14 +91,25 @@ func SetParamExist(name, value, mark string) *Result {
 }
 
 func SetParam(name, value, mark string) *Result {
-	r := new(Result)
-	r.ID = utils.GenID()
-	r.Name = name
-	r.Value = value
-	r.Mark = mark
-	err := getDB().Model(r).Create(r).Error
-	if err != nil {
-		return nil
+	r := GetParam(name, "")
+	if r.ID == 0 {
+		r.ID = utils.GenID()
+		r.Name = name
+		r.Value = value
+		r.Mark = mark
+
+		err := getDB().Model(r).Create(r).Error
+		if err != nil {
+			return nil
+		}
+	} else {
+		r.Name = name
+		r.Value = value
+		r.Mark = mark
+		err := getDB().Model(r).Where("id = ?", r.ID).Updates(r).Error
+		if err != nil {
+			return nil
+		}
 	}
 
 	return r

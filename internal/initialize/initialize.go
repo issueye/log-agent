@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/dimiro1/banner"
-	"github.com/issueye/log-agent/internal/agent"
 	"github.com/issueye/log-agent/internal/global"
 	"github.com/mattn/go-colorable"
 )
@@ -19,7 +18,7 @@ func Initialize() {
 	// 数据
 	InitData()
 	// 初始化监听
-	agent.Init()
+	InitMonitor()
 	// http服务
 	InitServer()
 	// 启动服务

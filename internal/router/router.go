@@ -40,6 +40,9 @@ func InitRouter(r *gin.Engine) {
 		monitor.PUT("", controller.ModifyMonitor)
 		monitor.PUT("state/:id", controller.ModifyStateMonitor)
 		monitor.DELETE("/:id", controller.DelMonitor)
+
+		// websocket
+		r.GET("ws/monitor/:id", controller.WsLogView)
 	}
 }
 

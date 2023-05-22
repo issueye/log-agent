@@ -15,11 +15,12 @@ import (
 
 type Config struct {
 	Path       string
-	MaxSize    int  //文件大小限制,单位MB
-	MaxAge     int  //日志文件保留天数
-	MaxBackups int  //最大保留日志文件数量
-	Compress   bool //是否压缩处理
-	Level      int  // 等级
+	MaxSize    int        //文件大小限制,单位MB
+	MaxAge     int        //日志文件保留天数
+	MaxBackups int        //最大保留日志文件数量
+	Compress   bool       //是否压缩处理
+	Level      int        // 等级
+	Mode       LogOutMode // 日志输出模式
 }
 
 // InitLogger
@@ -85,6 +86,11 @@ func InitLogger(cfg *Config) (*zap.SugaredLogger, *zap.Logger) {
 		})
 	}
 
+	var (
+		infoFileCore  zapcore.Core
+		errorFileCore zapcore.Core
+	)
+
 	// info文件writeSyncer
 	infoFileWriteSyncer := zapcore.AddSync(&lumberjack.Logger{
 		Filename:   infoLogFileName, //日志文件存放目录，如果文件夹不存在会自动创建
@@ -94,8 +100,6 @@ func InitLogger(cfg *Config) (*zap.SugaredLogger, *zap.Logger) {
 		LocalTime:  false,           //
 		Compress:   cfg.Compress,    //是否压缩处理
 	})
-	// 第三个及之后的参数为写入文件的日志级别,ErrorLevel模式只记录error级别的日志
-	infoFileCore := zapcore.NewCore(encoder, zapcore.NewMultiWriteSyncer(infoFileWriteSyncer, zapcore.AddSync(os.Stdout)), lowPriority)
 
 	// error文件writeSyncer
 	errorFileWriteSyncer := zapcore.AddSync(&lumberjack.Logger{
@@ -106,8 +110,20 @@ func InitLogger(cfg *Config) (*zap.SugaredLogger, *zap.Logger) {
 		LocalTime:  false,
 		Compress:   cfg.Compress, //是否压缩处理
 	})
-	// 第三个及之后的参数为写入文件的日志级别,ErrorLevel模式只记录error级别的日志
-	errorFileCore := zapcore.NewCore(encoder, zapcore.NewMultiWriteSyncer(errorFileWriteSyncer, zapcore.AddSync(os.Stdout)), highPriority)
+	if cfg.Mode == LOM_DEBUG {
+
+		// 第三个及之后的参数为写入文件的日志级别,ErrorLevel模式只记录error级别的日志
+		infoFileCore = zapcore.NewCore(encoder, zapcore.NewMultiWriteSyncer(infoFileWriteSyncer, zapcore.AddSync(os.Stdout)), lowPriority)
+
+		// 第三个及之后的参数为写入文件的日志级别,ErrorLevel模式只记录error级别的日志
+		errorFileCore = zapcore.NewCore(encoder, zapcore.NewMultiWriteSyncer(errorFileWriteSyncer, zapcore.AddSync(os.Stdout)), highPriority)
+	} else {
+		// 第三个及之后的参数为写入文件的日志级别,ErrorLevel模式只记录error级别的日志
+		infoFileCore = zapcore.NewCore(encoder, infoFileWriteSyncer, lowPriority)
+
+		// 第三个及之后的参数为写入文件的日志级别,ErrorLevel模式只记录error级别的日志
+		errorFileCore = zapcore.NewCore(encoder, errorFileWriteSyncer, highPriority)
+	}
 
 	coreArr = append(coreArr, infoFileCore)
 	coreArr = append(coreArr, errorFileCore)

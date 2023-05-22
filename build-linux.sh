@@ -14,8 +14,8 @@ APPNAME="logAgent-${VERSION}"
 DESCRIPTION="日志采集服务"
 
 go build -o bin/${APPNAME} -ldflags "-X demo/build.AppName=Demo \
--X github.com/issueye/log-agent/initialize.Branch=${BRANCH} \
--X github.com/issueye/log-agent/initialize.Commit=${COMMIT} \
--X github.com/issueye/log-agent/initialize.Date=${NOW} \
--X github.com/issueye/log-agent/initialize.AppName=${DESCRIPTION} \
--X github.com/issueye/log-agent/initialize.Version=${VERSION}" main.go
+-X github.com/issueye/log-agent/internal/initialize.Branch=${BRANCH} \
+-X github.com/issueye/log-agent/internal/initialize.Commit=${COMMIT} \
+-X github.com/issueye/log-agent/internal/initialize.Date=${NOW} \
+-X github.com/issueye/log-agent/internal/initialize.AppName=${DESCRIPTION} \
+-X github.com/issueye/log-agent/internal/initialize.Version=${VERSION}" main.go
