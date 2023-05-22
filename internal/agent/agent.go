@@ -44,25 +44,14 @@ func New(id, path, script string, level int) (*Agent, error) {
 	r := config.GetParam("SERVER-MODE", "release")
 	if r.Value == "release" && a.ScriptPath != "" {
 		a.JsCore = lichee.NewCore()
-		// 设置参数
-		a.JsCore.SetGlobalProperty("getLogLevel", GetLogLevel)
-		err := a.JsCore.Run(a.ID, a.ScriptPath)
-		if err != nil {
-			return nil, err
-		}
-
-		// 导出方法
-		err = a.JsCore.ExportFunc("getMessage", &a.getMessage)
-		if err != nil {
-			return nil, err
-		}
+		a.getMessage = a.jsRt(a.JsCore)
 	}
 
 	return a, nil
 }
 
-func GetLogLevel(level int) string {
-	switch level {
+func (a *Agent) GetLogLevel() string {
+	switch a.Level {
 	case -1:
 		return "debug"
 	case 0:
@@ -170,24 +159,8 @@ func (a *Agent) NewLine(data string) {
 		// 如果当前运行模式是 debug 模式则每次都会重新加载JS文件，适合在调试时
 		r := config.GetParam("SERVER-MODE", "release")
 		if r.Value == "debug" {
-			core := lichee.NewCore()
-			// 设置参数
-			core.SetLogOutMode(lichee.LOM_DEBUG)
-			core.SetGlobalProperty("getLogLevel", GetLogLevel)
-			err := core.Run(a.ID, a.ScriptPath)
-			if err != nil {
-				fmt.Println("运行脚本失败，失败原因：", err.Error())
-				return
-			}
-
-			// 导出方法
-			var cbFunc getMessageFunc
-			err = core.ExportFunc("getMessage", &cbFunc)
-			if err != nil {
-				fmt.Println("导出方法失败【getMessage】，失败原因：", err.Error())
-				return
-			}
-
+			c := lichee.NewCore()
+			cbFunc := a.jsRt(c)
 			callbackData = cbFunc(data)
 		} else {
 			callbackData = a.getMessage(data)
@@ -209,4 +182,25 @@ func (a *Agent) NewLine(data string) {
 			return
 		}
 	}
+}
+
+func (a *Agent) jsRt(rt *lichee.Core) getMessageFunc {
+	// 设置参数
+	rt.SetLogOutMode(lichee.LOM_DEBUG)
+	rt.SetGlobalProperty("getLogLevel", a.GetLogLevel)
+	err := rt.Run(a.ID, a.ScriptPath)
+	if err != nil {
+		fmt.Println("运行脚本失败，失败原因：", err.Error())
+		return nil
+	}
+
+	// 导出方法
+	var cbFunc getMessageFunc
+	err = rt.ExportFunc("getMessage", &cbFunc)
+	if err != nil {
+		fmt.Println("导出方法失败【getMessage】，失败原因：", err.Error())
+		return nil
+	}
+
+	return cbFunc
 }

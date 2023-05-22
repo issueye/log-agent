@@ -19,3 +19,5 @@ tmp
 asset
 runtime
 bin
+
+*.log
