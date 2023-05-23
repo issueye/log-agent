@@ -13,6 +13,8 @@ require (
 	github.com/go-playground/validator/v10 v10.13.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/google/uuid v1.3.0
+	github.com/gorilla/websocket v1.5.0
+	github.com/issueye/lichee-js v0.0.0-20230515095807-9cc3f68fc6e5
 	github.com/issueye/tail v0.0.0-20230322075002-2ce4fa41a19b
 	github.com/mattn/go-colorable v0.1.13
 	go.uber.org/zap v1.24.0
@@ -40,8 +42,6 @@ require (
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/pprof v0.0.0-20230207041349-798e818bf904 // indirect
-	github.com/gorilla/websocket v1.5.0 // indirect
-	github.com/issueye/lichee-js v0.0.0-20230515095807-9cc3f68fc6e5 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
